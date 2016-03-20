@@ -1,6 +1,8 @@
 import os
+import teams2016
 import textract
 import time
+
 from datetime import datetime
 
 FORECAST_LOC = "fivethirtyeight_ncaa_forecasts.csv"
@@ -17,7 +19,12 @@ def teams_to_dict():
     num_teams = len(teams_dict)
     if num_teams != 64:
         raise ValueError('The number of entered teams is ' + str(num_teams))
-    return teams_dict
+
+    id_map = {}
+    for i in range(len(teams2016.FTE_TEAM_IDS)):
+        id_map[teams2016.FTE_TEAM_IDS[i]] = teams2016.TEAMS[i].replace(" ", "")
+
+    return teams_dict, id_map
 
 
 def count_picks(teams_dict, text):
@@ -71,11 +78,12 @@ def process_538_data():
     for i in range(len(rows) - 1, -1, -1):
         if rows[i][forecast_date_idx] != latest_date:
             rows.remove(rows[i])
-    print(rows)
+    return rows, team_id_idx
 
-process_538_data()
+prob_rows, team_id_idx = process_538_data()
+teams_dict, id_map = teams_to_dict()
 
-# teams_dict = teams_to_dict()
+
 # text = textract.process('bracket_images/luke.pdf', method='pdfminer')
 #
 # print(count_picks(teams_dict, text))
