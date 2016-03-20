@@ -46,10 +46,39 @@ def count_picks(teams_dict, text):
             teams_dict[result] += 1
             total_count += 1
     return total_count
-
-
-def resolve_missed_picks(teams_dict):
-    pass
+#
+#
+# def resolve_missed_picks(teams_dict):
+#     # Remove the names of teams that are found in the PDF but lost their game.
+#     south = teams2016.TEAMS[0:16]
+#     west = teams2016.TEAMS[16:32]
+#     east = teams2016.TEAMS[32:48]
+#     midwest = teams2016.TEAMS[48:64]
+#
+#     def remove_false_wins(region, round):
+#         for i in range(0, len(region), 2):
+#             team1 = region[i].replace(" ", "")
+#             team2 = region[i + 1].replace(" ", "")
+#             # If both teams show up in next round remove those tallies as false positives.
+#             if teams_dict[team1] > round and teams_dict[team2] > round:
+#                 teams_dict[team1] -= 1
+#                 teams_dict[team2] -= 1
+#         # if len(region) >= 2:
+#         #     possible = [[]]*(2**(len(region)/2))
+#         #     print(len(possible))
+#         #     for i in range(0, len(region), 2):
+#         #         for j in range(0, len(possible), 2):
+#         #             possible[j].append(region[i])
+#         #             possible[j].append(region[i+1])
+#         #     # print(possible)
+#         #     exit()
+#         #     for poss in possible:
+#         #         remove_false_wins(poss, round+1)
+#
+#     remove_false_wins(south, 0)
+#     remove_false_wins(west, 0)
+#     remove_false_wins(east, 0)
+#     remove_false_wins(midwest, 0)
 
 
 def process_538_data():
@@ -99,19 +128,21 @@ prob_rows, team_id_idx, round_1_win_idx = process_538_data()
 teams_dict, id_map = teams_to_dict()
 
 text = textract.process('bracket_images/luke.pdf', method='pdfminer')
-
-print(id_map)
-for row in prob_rows:
-    print row
-
 count_picks(teams_dict, text)
-print(teams_dict)
+# resolve_missed_picks(teams_dict)
+# 
+# print(id_map)
+# for row in prob_rows:
+#     print row
+#
+# print(teams_dict)
 
 points = 0
 current_point_award = BASE_POINTS
 for i in range(NUM_ROUNDS):
     current_round_idx = round_1_win_idx + i
-    for row in prob_rows:
+    for i in range(len(prob_rows)):
+        row = prob_rows[i]
         # If the team won and the pick was made.
         team_name = id_map[int(row[team_id_idx])]
         if float(row[current_round_idx]) == 1.0 and teams_dict[team_name] > 0:
