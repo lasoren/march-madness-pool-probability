@@ -23,6 +23,9 @@ def teams_to_dict():
     for team in teams2016.TEAMS:
         # Start at -1 so that only picks are counted. The name appearing once means nothing.
         teams_dict[team.replace(" ", "")] = -1
+    # TODO(luke): Replace this with something better. Just a temporary fix.
+    teams_dict['NotreDame'] = 0
+
     num_teams = len(teams_dict)
     if num_teams != 64:
         raise ValueError('The number of entered teams is ' + str(num_teams))
@@ -46,39 +49,6 @@ def count_picks(teams_dict, text):
             teams_dict[result] += 1
             total_count += 1
     return total_count
-#
-#
-# def resolve_missed_picks(teams_dict):
-#     # Remove the names of teams that are found in the PDF but lost their game.
-#     south = teams2016.TEAMS[0:16]
-#     west = teams2016.TEAMS[16:32]
-#     east = teams2016.TEAMS[32:48]
-#     midwest = teams2016.TEAMS[48:64]
-#
-#     def remove_false_wins(region, round):
-#         for i in range(0, len(region), 2):
-#             team1 = region[i].replace(" ", "")
-#             team2 = region[i + 1].replace(" ", "")
-#             # If both teams show up in next round remove those tallies as false positives.
-#             if teams_dict[team1] > round and teams_dict[team2] > round:
-#                 teams_dict[team1] -= 1
-#                 teams_dict[team2] -= 1
-#         # if len(region) >= 2:
-#         #     possible = [[]]*(2**(len(region)/2))
-#         #     print(len(possible))
-#         #     for i in range(0, len(region), 2):
-#         #         for j in range(0, len(possible), 2):
-#         #             possible[j].append(region[i])
-#         #             possible[j].append(region[i+1])
-#         #     # print(possible)
-#         #     exit()
-#         #     for poss in possible:
-#         #         remove_false_wins(poss, round+1)
-#
-#     remove_false_wins(south, 0)
-#     remove_false_wins(west, 0)
-#     remove_false_wins(east, 0)
-#     remove_false_wins(midwest, 0)
 
 
 def process_538_data():
@@ -129,13 +99,9 @@ teams_dict, id_map = teams_to_dict()
 
 text = textract.process('bracket_images/luke.pdf', method='pdfminer')
 count_picks(teams_dict, text)
-# resolve_missed_picks(teams_dict)
-#
-# print(id_map)
-# for row in prob_rows:
-#     print row
-#
-# print(teams_dict)
+
+# print(text)
+print(teams_dict)
 
 points = 0
 current_point_award = BASE_POINTS
