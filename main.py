@@ -104,6 +104,7 @@ count_picks(teams_dict, text)
 print(teams_dict)
 
 points = 0
+expected_points = 0
 current_point_award = BASE_POINTS
 for i in range(NUM_ROUNDS):
     current_round_idx = round_1_win_idx + i
@@ -113,11 +114,19 @@ for i in range(NUM_ROUNDS):
         team_name = id_map[int(row[team_id_idx])]
         if float(row[current_round_idx]) == 1.0 and teams_dict[team_name] > 0:
             points += current_point_award
+            expected_points += current_point_award
             # Remove a selected win from that team.
             print(team_name + " won in round " + str(current_round_idx-round_1_win_idx))
+            teams_dict[team_name] -= 1
+        elif teams_dict[team_name] > 0:
+            added = current_point_award * float(row[current_round_idx])
+            expected_points += added
+            print(team_name + " for win in round " + str(current_round_idx-round_1_win_idx) +
+                  " will get: " + str(added))
             teams_dict[team_name] -= 1
     # Double the points at the end of the round.
     current_point_award *= ROUND_MULTIPLE
 
 print(points)
+print(expected_points)
 
