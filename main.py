@@ -130,7 +130,7 @@ teams_dict, id_map = teams_to_dict()
 text = textract.process('bracket_images/luke.pdf', method='pdfminer')
 count_picks(teams_dict, text)
 # resolve_missed_picks(teams_dict)
-# 
+#
 # print(id_map)
 # for row in prob_rows:
 #     print row
@@ -148,6 +148,7 @@ for i in range(NUM_ROUNDS):
         if float(row[current_round_idx]) == 1.0 and teams_dict[team_name] > 0:
             points += current_point_award
             # Remove a selected win from that team.
+            print(team_name + " won in round " + str(current_round_idx-round_1_win_idx))
             teams_dict[team_name] -= 1
     # Double the points at the end of the round.
     current_point_award *= ROUND_MULTIPLE
