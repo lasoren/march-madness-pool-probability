@@ -103,11 +103,11 @@ brackets = glob.glob('bracket_images/*.pdf')
 for bracket in brackets:
     teams_dict, id_map = teams_to_dict()
     text = textract.process(bracket, method='pdfminer')
-    total_count = count_picks(teams_dict, text)
-    print(total_count)
+    count_picks(teams_dict, text)
 
     points = 0
     expected_points = 0
+    ppr = 0
     current_point_award = BASE_POINTS
     for i in range(NUM_ROUNDS):
         current_round_idx = round_1_win_idx + i
@@ -124,6 +124,8 @@ for bracket in brackets:
             elif teams_dict[team_name] > 0:
                 added = current_point_award * float(row[current_round_idx])
                 expected_points += added
+                if float(row[current_round_idx]) != 0:
+                    ppr += current_point_award
                 # print(team_name + " for win in round " + str(current_round_idx-round_1_win_idx) +
                 #       " will get: " + str(added))
                 teams_dict[team_name] -= 1
@@ -132,4 +134,5 @@ for bracket in brackets:
 
     print(bracket)
     print("Points: " + str(points))
-    print("Expected Points: " + str(expected_points))
+    print("PPR: " + str(ppr))
+    print("Expected Total Points: " + str(expected_points))
