@@ -21,6 +21,7 @@ ROUND_1_WIN_KEY = "rd1_win"
 ROUND_2_WIN_KEY = "rd2_win"
 LEAGUE = "mens"
 
+
 class BracketEntry:
     bracket_name = ""
     points = 0
@@ -148,11 +149,11 @@ while (num_sims < TOTAL_SIMS):
     for i in range(NUM_ROUNDS):
         current_round_idx = round_1_win_idx + i
         for j in range(len(prob_rows)):
+            rand_val = random.uniform(0, 1)
             for entry in entries:
                 row = prob_rows[j]
                 # If the team won and the pick was made.
                 team_name = id_map[int(row[team_id_idx])]
-                rand_val = random.uniform(0, 1)
                 if float(row[current_round_idx]) == 1.0 and entry.teams_dict[team_name] > 0:
                     entry.points += current_point_award
                     entry.sim_points += current_point_award
@@ -181,7 +182,8 @@ while (num_sims < TOTAL_SIMS):
     if num_sims % 10000 == 0:
         entries.sort(key=lambda x: x.num_wins, reverse=True)
         for entry in entries:
-            entry.win_percentage = entry.num_wins*100.0 / num_sims
+            if num_sims > 0:
+                entry.win_percentage = entry.num_wins*100.0 / num_sims
             print(entry)
         print("\n\n\n")
     # Keep track of the number of simulations.
