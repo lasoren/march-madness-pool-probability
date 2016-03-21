@@ -18,6 +18,19 @@ ROUND_1_WIN_KEY = "rd1_win"
 ROUND_2_WIN_KEY = "rd2_win"
 LEAGUE = "mens"
 
+class BracketEntry:
+    bracket_name = ""
+    points = 0
+    ppr = 0
+    expected_points = 0.0
+
+    def __str__(self):
+        return ("Bracket: " + self.bracket_name +
+                "\nPoints: " + str(self.points) +
+                "\nPPR: " + str(self.ppr) +
+                "\nExpected Total Points: " + str(self.expected_points))
+
+
 def teams_to_dict():
     import teams2016
     teams_dict = {}
@@ -99,6 +112,7 @@ def process_538_data():
 prob_rows, team_id_idx, round_1_win_idx = process_538_data()
 
 brackets = glob.glob('bracket_images/*.pdf')
+entries = []
 
 for bracket in brackets:
     teams_dict, id_map = teams_to_dict()
@@ -132,7 +146,14 @@ for bracket in brackets:
         # Double the points at the end of the round.
         current_point_award *= ROUND_MULTIPLE
 
-    print(bracket)
-    print("Points: " + str(points))
-    print("PPR: " + str(ppr))
-    print("Expected Total Points: " + str(expected_points))
+    entry = BracketEntry()
+    entry.bracket_name = bracket
+    entry.points = points
+    entry.ppr = ppr
+    entry.expected_points = expected_points
+    entries.append(entry)
+
+entries.sort(key=lambda x: x.expected_points, reverse=True)
+for entry in entries:
+    print(entry)
+
