@@ -1,7 +1,8 @@
 import os
-import teams2016
 import textract
 import time
+import glob
+import teams2016
 
 from datetime import datetime
 
@@ -22,9 +23,7 @@ def teams_to_dict():
     teams_dict = {}
     for team in teams2016.TEAMS:
         # Start at -1 so that only picks are counted. The name appearing once means nothing.
-        teams_dict[team.replace(" ", "")] = -1
-    # TODO(luke): Replace this with something better. Just a temporary fix.
-    teams_dict['NotreDame'] = 0
+        teams_dict[team] = -1
 
     num_teams = len(teams_dict)
     if num_teams != 64:
@@ -32,7 +31,7 @@ def teams_to_dict():
 
     id_map = {}
     for i in range(len(teams2016.FTE_TEAM_IDS)):
-        id_map[teams2016.FTE_TEAM_IDS[i]] = teams2016.TEAMS[i].replace(" ", "")
+        id_map[teams2016.FTE_TEAM_IDS[i]] = teams2016.TEAMS[i]
 
     return teams_dict, id_map
 
@@ -48,6 +47,9 @@ def count_picks(teams_dict, text):
         if result in teams_dict:
             teams_dict[result] += 1
             total_count += 1
+        else:
+            if result in teams2016.ALTERNATES:
+                teams_dict[teams2016.ALTERNATES[result]] += 1
     return total_count
 
 
@@ -95,38 +97,39 @@ def process_538_data():
     return rows, team_id_idx, round_2_win_idx
 
 prob_rows, team_id_idx, round_1_win_idx = process_538_data()
-teams_dict, id_map = teams_to_dict()
 
-text = textract.process('bracket_images/luke.pdf', method='pdfminer')
-count_picks(teams_dict, text)
+brackets = glob.glob('bracket_images/*.pdf')
 
-# print(text)
-print(teams_dict)
+for bracket in brackets:
+    teams_dict, id_map = teams_to_dict()
+    text = textract.process(bracket, method='pdfminer')
+    total_count = count_picks(teams_dict, text)
+    print(total_count)
 
-points = 0
-expected_points = 0
-current_point_award = BASE_POINTS
-for i in range(NUM_ROUNDS):
-    current_round_idx = round_1_win_idx + i
-    for i in range(len(prob_rows)):
-        row = prob_rows[i]
-        # If the team won and the pick was made.
-        team_name = id_map[int(row[team_id_idx])]
-        if float(row[current_round_idx]) == 1.0 and teams_dict[team_name] > 0:
-            points += current_point_award
-            expected_points += current_point_award
-            # Remove a selected win from that team.
-            print(team_name + " won in round " + str(current_round_idx-round_1_win_idx))
-            teams_dict[team_name] -= 1
-        elif teams_dict[team_name] > 0:
-            added = current_point_award * float(row[current_round_idx])
-            expected_points += added
-            print(team_name + " for win in round " + str(current_round_idx-round_1_win_idx) +
-                  " will get: " + str(added))
-            teams_dict[team_name] -= 1
-    # Double the points at the end of the round.
-    current_point_award *= ROUND_MULTIPLE
+    points = 0
+    expected_points = 0
+    current_point_award = BASE_POINTS
+    for i in range(NUM_ROUNDS):
+        current_round_idx = round_1_win_idx + i
+        for i in range(len(prob_rows)):
+            row = prob_rows[i]
+            # If the team won and the pick was made.
+            team_name = id_map[int(row[team_id_idx])]
+            if float(row[current_round_idx]) == 1.0 and teams_dict[team_name] > 0:
+                points += current_point_award
+                expected_points += current_point_award
+                # Remove a selected win from that team.
+                # print(team_name + " won in round " + str(current_round_idx-round_1_win_idx))
+                teams_dict[team_name] -= 1
+            elif teams_dict[team_name] > 0:
+                added = current_point_award * float(row[current_round_idx])
+                expected_points += added
+                # print(team_name + " for win in round " + str(current_round_idx-round_1_win_idx) +
+                #       " will get: " + str(added))
+                teams_dict[team_name] -= 1
+        # Double the points at the end of the round.
+        current_point_award *= ROUND_MULTIPLE
 
-print(points)
-print(expected_points)
-
+    print(bracket)
+    print("Points: " + str(points))
+    print("Expected Points: " + str(expected_points))
