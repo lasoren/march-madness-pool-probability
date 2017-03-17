@@ -148,12 +148,12 @@ while (num_sims < TOTAL_SIMS):
         entry.points = 0
         entry.ppr = 0
         entry.expected_points = 0
-    current_point_award = BASE_POINTS
 
-    for i in range(NUM_ROUNDS):
-        current_round_idx = round_1_win_idx + i
-        for j in range(len(prob_rows)):
-            rand_val = random.uniform(0, 1)
+    for j in range(len(prob_rows)):
+        rand_val = random.uniform(0, 1)
+        current_point_award = BASE_POINTS
+        for i in range(NUM_ROUNDS):
+            current_round_idx = round_1_win_idx + i
             for entry in entries:
                 row = prob_rows[j]
                 # If the team won and the pick was made.
@@ -177,8 +177,8 @@ while (num_sims < TOTAL_SIMS):
                             entry.sim_points += current_point_award
                     # print(team_name + " for win in round " + str(current_round_idx-round_1_win_idx) +
                     #       " will get: " + str(added))
-        # Double the points at the end of the round.
-        current_point_award *= ROUND_MULTIPLE
+            # Double the points at the end of the round.
+            current_point_award *= ROUND_MULTIPLE
     # Mark who won the simulation.
     entries.sort(key=lambda x: x.sim_points, reverse=True)
     entries[0].num_wins += 1
