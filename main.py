@@ -3,7 +3,6 @@ import random
 import textract
 import time
 import glob
-import teams2016
 
 from datetime import datetime
 
@@ -44,9 +43,9 @@ class BracketEntry:
 
 
 def teams_to_dict():
-    import teams2016
+    import teams2017
     teams_dict = {}
-    for team in teams2016.TEAMS:
+    for team in teams2017.TEAMS:
         # Start at -1 so that only picks are counted. The name appearing once means nothing.
         teams_dict[team] = -1
 
@@ -55,15 +54,16 @@ def teams_to_dict():
         raise ValueError('The number of entered teams is ' + str(num_teams))
 
     id_map = {}
-    for i in range(len(teams2016.FTE_TEAM_IDS)):
-        id_map[teams2016.FTE_TEAM_IDS[i]] = teams2016.TEAMS[i]
+    for i in range(len(teams2017.FTE_TEAM_IDS)):
+        id_map[teams2017.FTE_TEAM_IDS[i]] = teams2017.TEAMS[i]
 
     return teams_dict, id_map
 
 
 def count_picks(teams_dict, text):
+    import teams2017
     lines = text.split(os.linesep)
-    total_count = 0
+    total_count = -64
     for line in lines:
         # Remove numbers from the line.
         line = line.decode("utf8")
@@ -73,8 +73,12 @@ def count_picks(teams_dict, text):
             teams_dict[result] += 1
             total_count += 1
         else:
-            if result in teams2016.ALTERNATES:
-                teams_dict[teams2016.ALTERNATES[result]] += 1
+            if result in teams2017.ALTERNATES:
+                teams_dict[teams2017.ALTERNATES[result]] += 1
+                total_count += 1
+            # else:
+            #     if len(result) > 0:
+            #         print result
     return total_count
 
 
@@ -129,7 +133,7 @@ entries = []
 for bracket in brackets:
     teams_dict, id_map = teams_to_dict()
     text = textract.process(bracket, method='pdfminer')
-    count_picks(teams_dict, text)
+    print(count_picks(teams_dict, text))
     entry = BracketEntry()
     entry.permanent_teams_dict = teams_dict
     entry.bracket_name = bracket
@@ -165,14 +169,14 @@ while (num_sims < TOTAL_SIMS):
                     team_percentage = float(row[current_round_idx])
                     added = current_point_award * team_percentage
                     entry.expected_points += added
-                    if team_percentage != 0:
+                    entry.teams_dict[team_name] -= 1
+                    if team_percentage != 0.0:
                         entry.ppr += current_point_award
                         # Add to simulated points, if correctly picked.
                         if rand_val <= team_percentage:
                             entry.sim_points += current_point_award
                     # print(team_name + " for win in round " + str(current_round_idx-round_1_win_idx) +
                     #       " will get: " + str(added))
-                    entry.teams_dict[team_name] -= 1
         # Double the points at the end of the round.
         current_point_award *= ROUND_MULTIPLE
     # Mark who won the simulation.
