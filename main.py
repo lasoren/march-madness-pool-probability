@@ -39,7 +39,8 @@ class BracketEntry:
                 "\nPPR: " + str(self.ppr) +
                 "\nExpected Total Points: " + str(self.expected_points) +
                 "\nNum Wins: " + str(self.num_wins) +
-                "\nWin Percentage: " + str(self.win_percentage))
+                "\nWin Percentage: " + str(self.win_percentage) +
+                "\n")
 
 
 def teams_to_dict():
@@ -133,7 +134,7 @@ entries = []
 for bracket in brackets:
     teams_dict, id_map = teams_to_dict()
     text = textract.process(bracket, method='pdfminer')
-    print(count_picks(teams_dict, text))
+    count_picks(teams_dict, text)
     entry = BracketEntry()
     entry.permanent_teams_dict = teams_dict
     entry.bracket_name = bracket
@@ -141,6 +142,8 @@ for bracket in brackets:
 
 num_sims = 0
 while (num_sims < TOTAL_SIMS):
+    # Read fresh data from spreadsheet.
+    prob_rows, team_id_idx, round_1_win_idx = process_538_data()
     # Make a copy of the teams dict for new simulation.
     for entry in entries:
         entry.teams_dict = entry.permanent_teams_dict.copy()
@@ -152,31 +155,45 @@ while (num_sims < TOTAL_SIMS):
     for j in range(len(prob_rows)):
         rand_val = random.uniform(0, 1)
         current_point_award = BASE_POINTS
-        for i in range(NUM_ROUNDS):
+        row = prob_rows[j]
+        team_name = id_map[int(row[team_id_idx])]
+        for i in range(NUM_ROUNDS): # For one team.
             current_round_idx = round_1_win_idx + i
-            for entry in entries:
-                row = prob_rows[j]
-                # If the team won and the pick was made.
-                team_name = id_map[int(row[team_id_idx])]
-                if float(row[current_round_idx]) == 1.0 and entry.teams_dict[team_name] > 0:
-                    entry.points += current_point_award
-                    entry.sim_points += current_point_award
-                    entry.expected_points += current_point_award
-                    # Remove a selected win from that team.
-                    # print(team_name + " won in round " + str(current_round_idx-round_1_win_idx))
-                    entry.teams_dict[team_name] -= 1
-                elif entry.teams_dict[team_name] > 0:
-                    team_percentage = float(row[current_round_idx])
-                    added = current_point_award * team_percentage
-                    entry.expected_points += added
-                    entry.teams_dict[team_name] -= 1
-                    if team_percentage != 0.0:
-                        entry.ppr += current_point_award
-                        # Add to simulated points, if correctly picked.
-                        if rand_val <= team_percentage:
-                            entry.sim_points += current_point_award
-                    # print(team_name + " for win in round " + str(current_round_idx-round_1_win_idx) +
-                    #       " will get: " + str(added))
+            # If the team won and the pick was made.
+            if float(row[current_round_idx]) == 1.0: # Already won.
+                for entry in entries:
+                    if entry.teams_dict[team_name] > 0:
+                        entry.points += current_point_award
+                        entry.sim_points += current_point_award
+                        entry.expected_points += current_point_award
+                        entry.teams_dict[team_name] -= 1
+            else: # Didn't win or chance of winning.
+                team_percentage = float(row[current_round_idx])
+                expected_points = current_point_award * team_percentage
+                for entry in entries:
+                    if entry.teams_dict[team_name] > 0:
+                        entry.expected_points += expected_points
+                if team_percentage != 0.0:
+                    # Add to simulated points, if correctly picked.
+                    if rand_val <= team_percentage: # Team won.
+                        for entry in entries:
+                            if entry.teams_dict[team_name] > 0:
+                                entry.sim_points += current_point_award
+
+                        if i < NUM_ROUNDS - 1:  # More rounds to play.
+                            # Update win liklihood based on previous game's likelihood.
+                            row[current_round_idx + 1] = str(
+                                float(row[current_round_idx]) / team_percentage)
+                    else:
+                        # Team is eliminated.
+                        for k in range(
+                            current_round_idx, current_round_idx + NUM_ROUNDS):
+                            row[k] = '0.0'
+                    # Assume all wins.
+                    for entry in entries:
+                        if entry.teams_dict[team_name] > 0:
+                            entry.ppr += current_point_award
+                            entry.teams_dict[team_name] -= 1       
             # Double the points at the end of the round.
             current_point_award *= ROUND_MULTIPLE
     # Mark who won the simulation.
